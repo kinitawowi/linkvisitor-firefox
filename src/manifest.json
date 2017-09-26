@@ -1,0 +1,72 @@
+{
+    "manifest_version": 2,
+    "name": "Link Visitor",
+    "default_locale": "en_US",
+    "version": "5.0",
+    "author": "Kevin Milburn",
+    "description": "Mark link(s) as visited or unvisited",
+    "developer": {
+        "name": "Kevin Milburn",
+        "url": "https://github.com/kinitawowi/linkvisitor-firefox"
+    },
+    "applications": {
+        "gecko": {
+            "id": "{9C013B6E-46FC-11DD-B644-FC4D56D89593}",
+            "strict_min_version": "52.0"
+        }
+    },
+    "background": {
+        "scripts": [
+            "background/default-prefs.js",
+            "background/background.js"
+        ],
+        "persistent": true
+    },
+    "icons": {
+        "32": "content/images/icon-32.png",
+        "40": "content/images/icon-40.png",
+        "48": "content/images/icon-48.png",
+        "64": "content/images/icon-64.png",
+        "128": "content/images/icon-128.png"
+    },
+    "browser_action": {
+        "default_icon": {
+            "40": "content/images/icon-40.png"
+        },
+        "default_title": "Mark Links Un/Visited",
+        "default_popup": "content/popup.html",
+        "browser_style": true
+    },
+    "content_scripts": [
+        {
+        "matches": ["http://*/*", "https://*/*"],
+        "js": ["content/main.js"]
+        }
+    ],
+    "options_ui": {
+        "page": "content/settings.html?panel=preferences",
+        "browser_style": true
+    },
+    "commands": {
+        "linkvisitor-markall-visited": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+1"
+            },
+            "description": "Mark all links of the page as visited"
+        },
+        "linkvisitor-markall-unvisited": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+2"
+            },
+            "description": "Mark all links of the page as unvisited"
+        }
+    },
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "contextMenus",
+        "history",
+        "bookmarks",
+        "<all_urls>"
+    ]
+}

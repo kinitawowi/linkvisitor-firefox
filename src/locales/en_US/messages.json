@@ -1,0 +1,102 @@
+{
+    "title": {
+        "message": "Link Visitor"
+    },
+    "weh_prefs_label_debug": {
+        "message": "Log activity to console"
+    },
+    "weh_prefs_description_debug": {
+        "message": "debug logs for link visitor activity"
+    },
+    "weh_prefs_label_bookmarksVisited": {
+        "message": "Always Mark Bookmarks as Visited"
+    },
+    "weh_prefs_description_bookmarksVisited": {
+        "message": ""
+    },
+    "weh_prefs_label_doOverrideColour": {
+        "message": "Override Colour of Visited Links"
+    },
+    "weh_prefs_description_doOverrideColour": {
+        "message": "Override the default or site colour used to highlight visited links"
+    },
+    "weh_prefs_label_overrideColour": {
+        "message": "Visited Color"
+    },
+    "weh_prefs_description_overrideColour": {
+        "message": "colour to use for all visited links (except those in exceptions)"
+    },
+    "weh_prefs_label_overrideExceptions": {
+        "message": "Override Exceptions"
+    },
+    "weh_prefs_description_overrideExceptions": {
+        "message": "comma seperated list of hostname (to revert to default) or hostname:colour (to use a site specific colour)"
+    },
+    "weh_prefs_label_myparam_integer": {
+        "message": "Integer parameter"
+    },
+    "weh_prefs_description_myparam_integer": {
+        "message": "Minimum -10, maximum 100"
+    },
+    "weh_prefs_label_myparam_float": {
+        "message": "Float parameter"
+    },
+    "weh_prefs_description_myparam_float": {
+        "message": "Minimum 1.5, maximum 10.8"
+    },
+    "weh_prefs_label_myparam_boolean": {
+        "message": "Boolean parameter"
+    },
+    "weh_prefs_description_myparam_boolean": {
+        "message": "This is a boolean"
+    },
+    "weh_prefs_label_myparam_choice": {
+        "message": "Choice parameter"
+    },
+    "weh_prefs_description_myparam_choice": {
+        "message": "Pick one option"
+    },
+    "mark_all_menu": {
+        "message": "Mark all links as"
+    },
+    "mark_all_visited": {
+        "message": "Mark all links as visited"
+    },
+    "mark_all_unvisited": {
+        "message": "Mark all links as unvisted"
+    },
+    "mark_selected_menu": {
+        "message": "Mark selected links as"
+    },
+    "stop" : {
+        "message": "Stop marking links"
+    },
+    "visited": {
+        "message": "Visited"
+    },
+    "unvisited": {
+        "message": "Unvisited"
+    },
+    "toggle_link": {
+        "message": "Toggle visited state"
+    },
+    "settings": {
+        "message": "Preferences"
+    },
+    "translation": {
+        "message": "Translation"
+    },
+    "save": {
+        "message": "Save"
+    },
+    "cancel": {
+        "message": "Cancel"
+    },
+    "default": {
+        "message": "Default"
+    },
+    "version": {
+        "message": "Version"
+    }
+
+}
