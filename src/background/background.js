@@ -298,11 +298,6 @@ weh.ui.update("default",{
     }
 });
 
-/* if you don't need settings in your add-on:
-   - delete the call below
-   - remove entry options_page in manifest.json
-   - delete files src/content/settings.* files
-*/
 weh.ui.update("settings",{
     type: "tab",
     contentURL: "content/settings.html"
@@ -387,6 +382,7 @@ weh.prefs.on('overrideColour', function() {
 
 
 browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab_info) {
+    //whenever a page change completes within a tab,  add our colour override
     if (change_info.status === "complete" && weh.prefs.doOverrideColour) {
         updateTabOverride(tab_info);
     }
@@ -394,6 +390,7 @@ browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab_info) {
     return true;
 });
 
+// when we load,  make sure all tabs have our color override
 if (weh.prefs.doOverrideColour) {
     updateAllTabs();
 }

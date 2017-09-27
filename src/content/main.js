@@ -85,11 +85,9 @@ function getLink(url) {
 }
 
 function refreshLink(link) {
-    window.setTimeout(function() {
-        var href = link.href;
-        link.href = '';
-        link.href = href;
-    }, 100);
+    var href = link.href;
+    link.href = '';
+    link.href = href;
 };
 
 
