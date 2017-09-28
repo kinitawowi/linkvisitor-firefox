@@ -377,6 +377,15 @@ function getHostColour(url) {
     if (exceptions[hostname] !== undefined) {
         colour = exceptions[hostname];
     }
+    else {
+        // see if we're a subdomain of an exception.
+        for (var h in exceptions) {
+            if (exceptions.hasOwnProperty(h) && hostname.endsWith(h)) {
+                colour = exceptions[h];
+                break;
+            }
+        }
+    }
     
     return weh.prefs.doOverrideColour ? colour : undefined;
 }
@@ -421,7 +430,7 @@ weh.prefs.on('overrideColour', function() {
 
 browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab_info) {
     //whenever a page change completes within a tab,  add our colour override
-    if (change_info.status === "complete" && weh.prefs.doOverrideColour) {
+    if (tab_info.url.startsWith("http") && change_info.status === "complete" && weh.prefs.doOverrideColour) {
         updateTabOverride(tab_info);
     }
     
