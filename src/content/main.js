@@ -60,10 +60,12 @@ function getSelectedLinks() {
 }
 
 function getSafeLinks(links) {
-    var safeLinks = new Array(links.length);
+    var safeLinks = [];
     
     for(var i = 0; i < links.length; ++i) {
-        safeLinks[i] = {url: links[i].href};
+        if (links[i].href && !links[i].href.startsWith('javascript:')) {
+            safeLinks.push({url: links[i].href});
+        }
     }
     
     return safeLinks;
@@ -88,7 +90,38 @@ function refreshLink(link) {
     var href = link.href;
     link.href = '';
     link.href = href;
-};
+}
+
+function updateProgress(progress) {
+    var progressElem = document.getElementById("linkvisitor_progress");
+    if (!progressElem) {
+        progressElem = document.createElement("div");
+
+        if (progressElem != null) {
+            progressElem.setAttribute("id", "linkvisitor_progress");
+            progressElem.setAttribute("class", "linkvisitor-progress");
+            progressElem.setAttribute("style", "display: block");
+        }
+
+        document.documentElement.appendChild(progressElem);
+    }
+    else if (progress.item === 1) {
+        progressElem.setAttribute("style", "display:block");
+    }
+
+    progressElem.textContent = progress.item + ' / ' + progress.total;
+
+    if (progress.item === progress.total) {
+        if (progress.cancelled) {
+            progressElem.setAttribute("style", "display: none");
+        }
+        else {
+            window.setTimeout(function () {
+                progressElem.setAttribute("style", "display: none");
+            }, 2000);
+        }
+    }
+}
 
 
 browser.runtime.onMessage.addListener(function(message, sender, response) {
@@ -100,7 +133,12 @@ browser.runtime.onMessage.addListener(function(message, sender, response) {
             break;
             
         case "linkvisitor-refreshlink":
-            refreshLink(getLink(message.url));
+            if (message.url) {
+                refreshLink(getLink(message.url));
+            }
+            if (message.progress) {
+                updateProgress(message.progress);
+            }
             result = true;
             break;
             

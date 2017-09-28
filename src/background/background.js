@@ -53,14 +53,13 @@ browser.contextMenus.create({
 
 
 function toggleLink(link, tab) {
-    if (link && link.url) {
+    if (link && link.url && !link.url.startsWith('javascript:')) {
         browser.history.search({
                 text: link.url,
                 startTime: 0,
                 maxResults: 1
             })
         .then(function(items) {
-            console.log(items);
             if (items && items.length === 1) {
                 if (weh.prefs.debug) {
                     console.log('Toggling Link -> unvisited:', link.url);
@@ -84,7 +83,33 @@ function toggleLink(link, tab) {
             browser.tabs.sendMessage(tab.id, {type: "linkvisitor-refreshlink", url: link.url});
         });
     }
-};
+}
+
+var updateJobs = {};
+
+function stopMarking(tab) {
+    var job = updateJobs[tab.id];
+    if (job) {
+        if (weh.prefs.debug) {
+            console.log('Stopping mark link job on tab:', tab.id);
+        }
+        window.clearTimeout(job.timeout_id);
+        job.next = job.links.length;
+
+        var progress = {
+            item: job.links.length,
+            total: job.links.length,
+            cancelled: true
+        };
+
+        browser.tabs.sendMessage(tab.id, {type: "linkvisitor-refreshlink",
+                progress: progress
+            })
+            .then(null, function(err) {});
+
+        delete updateJobs[tab.id];
+    }
+}
 
 function updateLink(link, tab_id) {
     return browser.history.search({
@@ -98,7 +123,10 @@ function updateLink(link, tab_id) {
                     console.log('Adding url:', link.url);
                 }
                 return browser.history.addUrl( {url: link.url})
-                        .then(function() { return true; });
+                        .then(function() { return true; },
+                            function(err) {
+                            console.error(err, link, items);
+                        });
             }
             else if (!link.visit && items && items.length === 1) {
                 if (weh.prefs.bookmarksVisited && browser.bookmarks) {
@@ -109,7 +137,10 @@ function updateLink(link, tab_id) {
                                     console.log('Removing url:', link.url);
                                 }
                                 return browser.history.deleteUrl({url: link.url})
-                                        .then(function() { return true; });
+                                        .then(function() { return true; },
+                                            function(err) {
+                                            console.error(err);
+                                        });
                             }
                             else {
                                 if (weh.prefs.debug) {
@@ -117,31 +148,50 @@ function updateLink(link, tab_id) {
                                 }
                                 return false;
                             }
-                        })
+                        }, function(err) {
+                            console.error(err);
+                        });
                 }
                 else {                    
                     if (weh.prefs.debug) {
                         console.log('Removing url:', link.url);
                     }
                     return browser.history.deleteUrl({url: link.url})
-                            .then(function() { return true; });
+                            .then(function() { return true; },
+                                function(err) {
+                                console.error(err);
+                            });
                 }
             }
             else {
                 return false;
             }
+        }, function(err) {
+            console.error(err);
         })
         .then(function(modified) {
-            if (modified) {
-                browser.tabs.sendMessage(tab_id, {type: "linkvisitor-refreshlink", url: link.url});
-            }
+                browser.tabs.sendMessage(tab_id, {type: "linkvisitor-refreshlink",
+                    url: modified ? link.url : undefined,
+                    progress: link.progress
+                })
+                .then(null, function(err) {
+                    // assume tab has gone,   stop processing
+                    stopMarking({id: tab_id});
+                });
+        }, function(err) {
+            console.error(err);
         });
 }
 
-var updateJobs = {};
 
 function nextLink(job) {
-    updateLink(job.links[job.next++], job.tab_id);
+    var link = job.links[job.next++];
+    link.progress = {
+        item: job.next,
+        total: job.links.length
+    };
+
+    updateLink(link, job.tab_id);
     
     if (job.next >= job.links.length) {
         delete updateJobs[job.tab_id];
@@ -194,18 +244,6 @@ function startMarking(type, tab) {
             }
         });
 
-}
-
-function stopMarking(tab) {
-    var job = updateJobs[tab.id];
-    if (job) {
-        if (weh.prefs.debug) {
-            console.log('Stopping mark link job on tab:', tab.id);
-        }
-        window.clearTimeout(job.timeout_id);
-        job.next = job.links.length;
-        delete updateJobs[tab.id];
-    }
 }
 
 browser.contextMenus.onClicked.addListener(function(info, tab) {

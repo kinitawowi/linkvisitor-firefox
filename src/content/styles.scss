@@ -24,3 +24,19 @@ body {
         color: highlighttext;
     }
 }
+
+.linkvisitor-progress {
+    z-index: 255;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    height: auto;
+    padding: 0 2pt;
+    text-align: center;
+    border: 2px solid purple;
+    background: rebeccapurple;
+    color: white;
+    font-family: sans-serif;
+    font-size: 10pt;
+}

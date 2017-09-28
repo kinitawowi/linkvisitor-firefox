@@ -1,4 +1,5 @@
 build/
+.idea/
 *.kate-swp
 *.swp
 *.orig
