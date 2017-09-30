@@ -111,48 +111,22 @@ function stopMarking(tab) {
     }
 }
 
-function updateLink(link, tab_id) {
-    return browser.history.search({
-            text: link.url,
-            startTime: 0,
-            maxResults: 1
-        })
-        .then(function(items) {
-            if (link.visit && (!items || items.length === 0)) {
-                if (weh.prefs.debug) {
-                    console.log('Adding url:', link.url);
-                }
-                return browser.history.addUrl( {url: link.url})
-                        .then(function() { return true; },
-                            function(err) {
-                            console.error(err, link, items);
-                        });
-            }
-            else if (!link.visit && items && items.length === 1) {
-                if (weh.prefs.bookmarksVisited && browser.bookmarks) {
-                    return browser.bookmarks.search({url: link.url})
-                        .then(function(items) {
-                            if (!items || items.length === 0) {
-                                if (weh.prefs.debug) {
-                                    console.log('Removing url:', link.url);
-                                }
-                                return browser.history.deleteUrl({url: link.url})
-                                        .then(function() { return true; },
-                                            function(err) {
-                                            console.error(err);
-                                        });
-                            }
-                            else {
-                                if (weh.prefs.debug) {
-                                    console.log('Skipping bookmarked url:', link.url);
-                                }
-                                return false;
-                            }
-                        }, function(err) {
-                            console.error(err);
-                        });
-                }
-                else {                    
+function visitLink(link) {
+    if (weh.prefs.debug) {
+        console.log('Adding url:', link.url);
+    }
+    return browser.history.addUrl( {url: link.url})
+            .then(function() { return true; },
+                function(err) {
+                console.error(err, link, items);
+            });
+}
+
+function unvisitLink(link) {
+    if (weh.prefs.bookmarksVisited && browser.bookmarks) {
+        return browser.bookmarks.search({url: link.url})
+            .then(function(items) {
+                if (!items || items.length === 0) {
                     if (weh.prefs.debug) {
                         console.log('Removing url:', link.url);
                     }
@@ -162,27 +136,27 @@ function updateLink(link, tab_id) {
                                 console.error(err);
                             });
                 }
-            }
-            else {
-                return false;
-            }
-        }, function(err) {
-            console.error(err);
-        })
-        .then(function(modified) {
-                browser.tabs.sendMessage(tab_id, {type: "linkvisitor-refreshlink",
-                    url: modified ? link.url : undefined,
-                    progress: link.progress
-                })
-                .then(null, function(err) {
-                    // assume tab has gone,   stop processing
-                    stopMarking({id: tab_id});
+                else {
+                    if (weh.prefs.debug) {
+                        console.log('Skipping bookmarked url:', link.url);
+                    }
+                    return false;
+                }
+            }, function(err) {
+                console.error(err);
+            });
+    }
+    else {
+        if (weh.prefs.debug) {
+            console.log('Removing url:', link.url);
+        }
+        return browser.history.deleteUrl({url: link.url})
+                .then(function() { return true; },
+                    function(err) {
+                    console.error(err);
                 });
-        }, function(err) {
-            console.error(err);
-        });
+    }
 }
-
 
 function nextLink(job) {
     var link = job.links[job.next++];
@@ -191,14 +165,57 @@ function nextLink(job) {
         total: job.links.length
     };
 
-    updateLink(link, job.tab_id);
-    
-    if (job.next >= job.links.length) {
-        delete updateJobs[job.tab_id];
+    var promise;
+    if (weh.prefs.skipCheck) {
+        promise = link.visit ? visitLink(link) : unvisitLink(link);
     }
     else {
-        job.timeout_id = window.setTimeout(nextLink, 100, job);
+        promise = browser.history.search({
+                text: link.url,
+                startTime: 0,
+                maxResults: 1
+            })
+            .then(function(items) {
+                if (link.visit && (!items || items.length === 0)) {
+                    return visitLink(link);
+                }
+                else if (!link.visit && items && items.length === 1) {
+                    return unvisitLink(link)
+                }
+                else {
+                    return false;
+                }
+            }, function(err) {
+                console.error(err);
+            });
     }
+
+    promise.then(function(modified) {
+            browser.tabs.sendMessage(job.tab_id, {type: "linkvisitor-refreshlink",
+                url: modified ? link.url : undefined,
+                progress: link.progress
+            })
+            .then(null, function(err) {
+                // assume tab has gone,   stop processing
+                stopMarking({id: job.tab_id});
+            });
+            return true;
+        })
+        .then(function() {
+            if (job.next >= job.links.length) {
+                delete updateJobs[job.tab_id];
+            }
+            else {
+                job.timeout_id = window.setTimeout(nextLink, weh.prefs.delay, job);
+            }
+            
+            return true;
+        }, 
+            function(err) {
+                console.error(err);
+                stopMarking({id: job.tab_id});
+            }
+        );
 }
 
 function startMarking(type, tab) {
@@ -237,7 +254,7 @@ function startMarking(type, tab) {
                 if (weh.prefs.debug) {
                     console.log('Start new job on tab:', job.tab_id, ' - ', job.links.length, ' links to process');
                 }
-                job.timeout_id = window.setTimeout(nextLink, 100, job);
+                job.timeout_id = window.setTimeout(nextLink, 0, job);
             }
             else if (weh.prefs.debug) {
                 console.log('Added ', linkInfo.links.length, ' links to job for tab: ', job.tab_id);
@@ -268,10 +285,16 @@ browser.contextMenus.onClicked.addListener(function(info, tab) {
     }
 });
 
-function handleMessage(message) {
+function handleMessage(message, window) {
+    var query_params = {
+        active: true,
+        url: ["http://*/*", "https://*/*"],
+        windowId: window.id
+    };
+
     switch(message.type) {
         case "linkvisitor-togglelink":
-            browser.tabs.query({active: true, url: ["http://*/*", "https://*/*"]})
+            browser.tabs.query(query_params)
                 .then(function(tabs) {                    
                     if (tabs && tabs.length) {
                         toggleLink(message, tabs[0]);
@@ -283,7 +306,7 @@ function handleMessage(message) {
 
         case "linkvisitor-markall-visited":
         case "linkvisitor-markall-unvisited":
-            browser.tabs.query({active: true, url: ["http://*/*", "https://*/*"]})
+            browser.tabs.query(query_params)
                 .then(function(tabs) {                    
                     if (tabs && tabs.length) {
                         startMarking(message.type, tabs[0]);
@@ -294,8 +317,8 @@ function handleMessage(message) {
             return true;
             
         case "linkvisitor-stop":
-            browser.tabs.query({active: true, url: ["http://*/*", "https://*/*"]})
-                .then(function(tabs) {                    
+            browser.tabs.query(query_params)
+                .then(function(tabs) {
                     if (tabs && tabs.length) {
                         stopMarking(tabs[0]);
                     }
@@ -308,12 +331,17 @@ function handleMessage(message) {
 
 
 browser.runtime.onMessage.addListener(function(request, sender, response) {
-    console.log('primary listener');
-    response(handleMessage(request));
+    browser.windows.getCurrent()
+        .then(function(window) {
+            response(handleMessage(request, window));
+        });
 });
 
 browser.commands.onCommand.addListener(function(command) {
-    handleMessage({type: command});
+    browser.windows.getCurrent()
+        .then(function(window) {
+            handleMessage({type: command}, window);
+        });
 });
 
 
@@ -330,7 +358,10 @@ weh.ui.update("default",{
             case "linkvisitor-markall-unvisited":
             case "linkvisitor-stop":
                 weh.ui.close("default");
-                handleMessage(message);
+                browser.windows.getCurrent({})
+                    .then(function(window) {
+                        handleMessage(message, window);
+                    });
                 break;
         }
     }

@@ -32,29 +32,17 @@
     "weh_prefs_description_overrideExceptions": {
         "message": "comma seperated list of hostname (to revert to default) or hostname:colour (to use a site specific colour)"
     },
-    "weh_prefs_label_myparam_integer": {
-        "message": "Integer parameter"
+    "weh_prefs_label_delay": {
+        "message": "Delay Interval"
     },
-    "weh_prefs_description_myparam_integer": {
-        "message": "Minimum -10, maximum 100"
+    "weh_prefs_description_delay": {
+        "message": "The delay between marking links in milliseconds (default 10)"
     },
-    "weh_prefs_label_myparam_float": {
-        "message": "Float parameter"
+    "weh_prefs_label_skipCheck": {
+        "message": "Skip History Check"
     },
-    "weh_prefs_description_myparam_float": {
-        "message": "Minimum 1.5, maximum 10.8"
-    },
-    "weh_prefs_label_myparam_boolean": {
-        "message": "Boolean parameter"
-    },
-    "weh_prefs_description_myparam_boolean": {
-        "message": "This is a boolean"
-    },
-    "weh_prefs_label_myparam_choice": {
-        "message": "Choice parameter"
-    },
-    "weh_prefs_description_myparam_choice": {
-        "message": "Pick one option"
+    "weh_prefs_description_skipCheck": {
+        "message": "Link Vistor check the history before adding a link, so it's only visited once, if selected, links will be visited every time"
     },
     "mark_all_menu": {
         "message": "Mark all links as"

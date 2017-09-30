@@ -8,7 +8,10 @@ function Prefs() {
                 "bookmarksVisited",
                 "doOverrideColour",
                 "overrideColour",
-                "overrideExceptions"]}>
+                "overrideExceptions",
+                "delay",
+                "skipCheck"
+                ]}>
                 <WehParam/>
             </WehParamSet>
         </WehParams>

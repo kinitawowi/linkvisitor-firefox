@@ -21,12 +21,13 @@ weh.prefs.declare([{
     name: "overrideExceptions",
     type: "string",
     defaultValue: "",
+},{
+    name: "skipCheck",
+    type: "boolean",
+    defaultValue: false
+},{
+    name: "delay",
+    type: "integer",
+    defaultValue: 10,
+    minimum: 0
 }]);
-
-
-/* 
-    "options_ui": {
-        "page": "content/settings.html?panel=preferences",
-        "browser_style": true
-    },
-*/

@@ -61,9 +61,11 @@ function getSelectedLinks() {
 
 function getSafeLinks(links) {
     var safeLinks = [];
+    var linkPresent = {};
     
     for(var i = 0; i < links.length; ++i) {
-        if (links[i].href && !links[i].href.startsWith('javascript:')) {
+        if (links[i].href && !links[i].href.startsWith('javascript:') && !linkPresent[links[i].href]) {
+            linkPresent[links[i].href] = true;
             safeLinks.push({url: links[i].href});
         }
     }
