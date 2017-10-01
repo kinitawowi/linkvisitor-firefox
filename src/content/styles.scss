@@ -1,10 +1,9 @@
 
-.linkvisitor-body {
-    padding: 0;
-    margin: 0;
+body.linkvisitor-body {
+    background-color: var(--in-content-page-background);
 }
 
-.linkvisitor-root {
+#root {
     min-width: 250px;
 }
 
