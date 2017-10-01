@@ -68,6 +68,7 @@
         "contextMenus",
         "history",
         "bookmarks",
-        "<all_urls>"
+        "<all_urls>",
+        "storage"
     ]
 }

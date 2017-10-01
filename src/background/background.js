@@ -51,6 +51,9 @@ browser.contextMenus.create({
     "id": "linkvisitor-togglelink"
 });
 
+function logError(err) {
+    console.error(err);
+}
 
 function toggleLink(link, tab) {
     if (link && link.url && !link.url.startsWith('javascript:')) {
@@ -65,18 +68,14 @@ function toggleLink(link, tab) {
                     console.log('Toggling Link -> unvisited:', link.url);
                 }
                 return browser.history.deleteUrl({url: link.url})
-                    .then(null, function(err) {
-                        console.error(err);
-                    });
+                    .then(null, logError);
             }
             else {
                 if (weh.prefs.debug) {
                     console.log('Toggling Link -> visited:', link.url);
                 }
                 return browser.history.addUrl({url: link.url})
-                    .then(null, function(err) {
-                        console.error(err);
-                    });
+                    .then(null, logError);
             }
         })
         .then(function() {
@@ -116,10 +115,7 @@ function visitLink(link) {
         console.log('Adding url:', link.url);
     }
     return browser.history.addUrl( {url: link.url})
-            .then(function() { return true; },
-                function(err) {
-                console.error(err, link, items);
-            });
+            .then(function() { return true; }, logError);
 }
 
 function unvisitLink(link) {
@@ -131,10 +127,7 @@ function unvisitLink(link) {
                         console.log('Removing url:', link.url);
                     }
                     return browser.history.deleteUrl({url: link.url})
-                            .then(function() { return true; },
-                                function(err) {
-                                console.error(err);
-                            });
+                            .then(function() { return true; }, logError);
                 }
                 else {
                     if (weh.prefs.debug) {
@@ -142,19 +135,14 @@ function unvisitLink(link) {
                     }
                     return false;
                 }
-            }, function(err) {
-                console.error(err);
-            });
+            }, logError);
     }
     else {
         if (weh.prefs.debug) {
             console.log('Removing url:', link.url);
         }
         return browser.history.deleteUrl({url: link.url})
-                .then(function() { return true; },
-                    function(err) {
-                    console.error(err);
-                });
+                .then(function() { return true; }, logError);
     }
 }
 
@@ -185,9 +173,7 @@ function nextLink(job) {
                 else {
                     return false;
                 }
-            }, function(err) {
-                console.error(err);
-            });
+            }, logError);
     }
 
     promise.then(function(modified) {
@@ -212,7 +198,7 @@ function nextLink(job) {
             return true;
         }, 
             function(err) {
-                console.error(err);
+                logError(err);
                 stopMarking({id: job.tab_id});
             }
         );
@@ -299,9 +285,7 @@ function handleMessage(message, window) {
                     if (tabs && tabs.length) {
                         toggleLink(message, tabs[0]);
                     }
-                }, function(err) {
-                    console.error(err);
-                });
+                }, logError);
             break;
 
         case "linkvisitor-markall-visited":
@@ -311,9 +295,7 @@ function handleMessage(message, window) {
                     if (tabs && tabs.length) {
                         startMarking(message.type, tabs[0]);
                     }
-                }, function(err) {
-                    console.error(err);
-                });
+                }, logError);
             return true;
             
         case "linkvisitor-stop":
@@ -397,10 +379,6 @@ function updateExceptions(entries) {
     }
 }
 
-if (weh.prefs.overrideExceptions) {
-    updateExceptions(weh.prefs.overrideExceptions);
-}
-
 function getHostColour(url) {
     var colour = weh.prefs.overrideColour;
     var hostname = (new URL(url)).hostname;
@@ -430,9 +408,7 @@ function updateTabOverride(tab) {
         browser.tabs.executeScript(tab.id, {
             code: css
         })
-        .then(null, function(err) {
-            console.error(err);
-        });
+        .then(null, logError);
     }
 }
 
@@ -445,19 +421,6 @@ function updateAllTabs(force) {
     });
 }
 
-weh.prefs.on('overrideExceptions', function() {
-    updateExceptions(weh.prefs.overrideExceptions);
-    updateAllTabs();
-});
-
-weh.prefs.on('doOverrideColour', function() {
-    updateAllTabs();
-});
-
-weh.prefs.on('overrideColour', function() {
-    updateAllTabs();
-});
-
 
 browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab_info) {
     //whenever a page change completes within a tab,  add our colour override
@@ -468,7 +431,94 @@ browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab_info) {
     return true;
 });
 
-// when we load,  make sure all tabs have our color override
-if (weh.prefs.doOverrideColour) {
-    updateAllTabs();
+function usePreferences() {
+    weh.prefs.on('overrideExceptions', function() {
+        updateExceptions(weh.prefs.overrideExceptions);
+        updateAllTabs();
+    });
+
+    weh.prefs.on('doOverrideColour', function() {
+        updateAllTabs();
+    });
+
+
+    weh.prefs.on('overrideColour', function() {
+        updateAllTabs();
+    });
+
+    if (weh.prefs.overrideExceptions) {
+        updateExceptions(weh.prefs.overrideExceptions);
+    }
+
+    // when we load,  make sure all tabs have our color override
+    if (weh.prefs.doOverrideColour) {
+        updateAllTabs();
+    }
 }
+
+function Hash(str) {
+    var hash = 0,
+        char;
+    if (str.length == 0) return hash;
+    for (var i = 0; i < str.length; i++) {
+        char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+    }
+    return hash;
+}
+
+function Stringify(object) {
+    return JSON.stringify(Object.keys(object).sort().map(function (k) {
+        return {
+            name: k,
+            value: object[k]
+        };
+    }));
+}
+
+// weh store prefs in local storage,  need to use storage.sync for better reliability
+function syncPreferences(storage) {
+    storage.get('prefs')
+        .then(function(stored) {
+            var prefs = stored.prefs;
+            var hash = Hash(Stringify(prefs));
+
+            if (prefs.bookmarksVisited == null) {
+                // preferences not set, initial save to local, or switched from local to sync
+                storage.set({'prefs': weh.prefs.$values});
+            }
+
+            weh.prefs.assign(prefs);
+            weh.prefs.off("");  //clear wehs handler
+            weh.prefs.on("", {
+                pack: true
+            }, function (newPrefs, oldPrefs) {
+                Object.assign(prefs, newPrefs);
+                var prefsStr = Stringify(prefs);
+                var newHash = Hash(prefsStr);
+                if (hash != newHash) {
+                    hash = newHash;
+                    storage.set({'prefs': prefs})
+                    .then(null, logError);
+                    localStorage.setItem("weh-prefs", prefsStr);
+                }
+            }, logError);
+
+            usePreferences();
+        }, function(err) {
+            logError(err);
+            usePreferences();
+        });
+}
+
+//  to enable syncronised storage Please set webextensions.storage.sync.enabled to true in about:config
+browser.storage.sync.get('prefs')
+    .then(
+        function(prefs) {  // success,   sync enabled.
+            syncPreferences(browser.storage.sync);
+        },
+        function() {  //error, sync disabled
+            syncPreferences(browser.storage.local);
+        }
+     );
