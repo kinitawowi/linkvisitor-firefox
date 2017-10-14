@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Link Visitor",
     "default_locale": "en_US",
-    "version": "5.2",
+    "version": "5.3",
     "author": "Kevin Milburn",
     "description": "Mark link(s) as visited or unvisited",
     "developer": {

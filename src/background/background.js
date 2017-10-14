@@ -481,12 +481,13 @@ function Stringify(object) {
 function syncPreferences(storage) {
     storage.get('prefs')
         .then(function(stored) {
-            var prefs = stored.prefs;
+            var prefs = stored.prefs || {};
             var hash = Hash(Stringify(prefs));
 
             if (prefs.bookmarksVisited == null) {
                 // preferences not set, initial save to local, or switched from local to sync
                 storage.set({'prefs': weh.prefs.$values});
+                prefs = weh.prefs.$values;
             }
 
             weh.prefs.assign(prefs);
@@ -504,8 +505,8 @@ function syncPreferences(storage) {
                     localStorage.setItem("weh-prefs", prefsStr);
                 }
             }, logError);
-
             usePreferences();
+           
         }, function(err) {
             logError(err);
             usePreferences();
